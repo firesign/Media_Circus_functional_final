@@ -1,5 +1,5 @@
 // send an NTP request to the time server at the given address 
-unsigned long sendNTPpacket(IPAddress& address)
+unsigned long sendNTPpacket(char* address)
 {
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE); 
