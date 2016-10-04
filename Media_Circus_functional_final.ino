@@ -11,14 +11,29 @@
  https://github.com/gauravmm/HT1632-for-Arduino/tree/master/Arduino/HT1632
  
  Notes on this version:  **********************************
- changed server to Raspberry Pi, (port 80) 
+ September 21 2016 -- 
+ after a month-long downtime, unit repaired; main problem was the wrong font_5x4.h file.
+ Also:
+ - revised main IP address to 24,138,58,129
+ - revised time server to use time.nist.gov URL rather than IP address
+ - commented out all serial monitor commands
+ - renamed the HT1632 library to HT1632mbl to prevent it from being updated - it contains an improved font set
+   ** this _SHOULD_ compile... **
+
+***********************************************************
+
+ TO UPDATE THIS UNIT:
+ - disconnect ethernet shield from Mega board
+ - you may use Arduino 1.6 IDE
+ 
  */
 
 #include <SPI.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
-#include <font_5x4.h>
-#include <HT1632.h>
+//#include <font_5x4.h>
+#include <font_mbl.h>
+#include <HT1632mbl.h>
 
 int wd, tempsecs; 
 int i = 1;
@@ -46,13 +61,16 @@ long previousMillisEpoch = 0;
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 // IPAddress server(24,222,117,110);    // my old ip address
+// IPAddress server(76,11,25,18);       // another old ip address
 // IPAddress holds the link to the file /cutup/cutup_1.php
-// which is the text that Media Circus uses
-IPAddress server(76,11,25,18);            // current ip address
+// which is the text that Media Circus uses:
+
+IPAddress server(24,138,58,129);            // current ip address
+
 //unsigned int localPort = 8888;          // local port to listen for UDP packets
 unsigned int localPort = 80;              // local port to listen for UDP packets
 
-IPAddress timeServer(192, 43, 244, 18); // time.nist.gov NTP server
+char timeServer[] = "time.nist.gov"; // time.nist.gov NTP server
 const int NTP_PACKET_SIZE= 48;          // NTP time stamp is in the first 48 bytes of the message
 
 byte packetBuffer[ NTP_PACKET_SIZE];    // buffer to hold incoming and outgoing packets 
@@ -65,22 +83,22 @@ EthernetClient client;
 void setup() {
 
   /* reset hack*/
-  digitalWrite(resetSwitch, 1);		// enable pullup
+  digitalWrite(resetSwitch, 1);    // enable pullup
   pinMode(resetSwitch, OUTPUT);
 
 
   screen_clear();
-  checkDipSwitches();			// check the DIP switches to identify unit's global location
+  checkDipSwitches();     // check the DIP switches to identify unit's global location
 
   //pinMode(resetSafety, OUTPUT);
-  //digitalWrite(resetSafety, 0);   	//prevent unit from going into repeated resets
+  //digitalWrite(resetSafety, 0);     //prevent unit from going into repeated resets
 
-    pinMode(DSTswitch, INPUT);
-  digitalWrite(DSTswitch, 1);		// enable pullup
+  pinMode(DSTswitch, INPUT);
+  digitalWrite(DSTswitch, 1);   // enable pullup
 
 
   // start the serial library:
-  Serial.begin(57600);
+  //Serial.begin(57600);
 
   HT1632.begin(9, 8, 7, 6, 5, 4);
 
@@ -170,7 +188,7 @@ void loop() {
     switch (ntpState) {
     case 0:    // ask NTP server the time
       cursor_move(1,5);
-      Serial.println("Asking NTP server the time");
+      //Serial.println("Asking NTP server the time");
       sendNTPpacket(timeServer); // send an NTP packet to a time server
       ntpState = 1;
       break;
@@ -185,7 +203,7 @@ void loop() {
       break;
 
     case 2:   // process NTP query
-      Serial.println("Processing NTP query");
+      //Serial.println("Processing NTP query");
       if ( Udp.parsePacket() ) {  
         // We've received a packet, read the data from it
         Udp.read(packetBuffer,NTP_PACKET_SIZE);  // read the packet into the buffer
@@ -222,22 +240,22 @@ void loop() {
         //Serial.println(epoch);
 
         // print the hour, minute and second:
-        Serial.print("The local time is ");       // 
-        Serial.print((epoch  % 86400L) / 3600); // print the hour (86400 equals secs per day)
-        Serial.print(':');  
+        //Serial.print("The local time is ");       // 
+        //Serial.print((epoch  % 86400L) / 3600); // print the hour (86400 equals secs per day)
+        //Serial.print(':');  
         if ( ((epoch % 3600) / 60) < 10 ) {
           // In the first 10 minutes of each hour, we'll want a leading '0'
-          Serial.print('0');
+          //Serial.print('0');
         }
-        Serial.print((epoch  % 3600) / 60); // print the minute (3600 equals secs per minute)
-        Serial.print(':'); 
+        //Serial.print((epoch  % 3600) / 60); // print the minute (3600 equals secs per minute)
+        //Serial.print(':'); 
         if ( (epoch % 60) < 10 ) {
           // In the first 10 seconds of each minute, we'll want a leading '0'
-          Serial.print('0');
+          //Serial.print('0');
         }
-        Serial.println(epoch %60); // print the second
-        Serial.print("Epoch = ");
-        Serial.println(epoch);
+        //Serial.println(epoch %60); // print the second
+        //Serial.print("Epoch = ");
+        //Serial.println(epoch);
         epochMillis = millis();
         //delay(5000);
       }
@@ -259,11 +277,11 @@ void loop() {
         //Serial.println(tempsecs);
         //if (tempsecs == 89) {       
         cursor_move(17,5);
-        Serial.println("Reset enabled");
+        //Serial.println("Reset enabled");
         cursor_move(18,5);
-        Serial.println("RESET IN 2 SECONDS");
+        //Serial.println("RESET IN 2 SECONDS");
         delay(2000);
-        digitalWrite(resetSwitch, 0);					// reset the unit
+        digitalWrite(resetSwitch, 0);         // reset the unit
       }
       ntpState = 4;                // has one second passed?
       break;
@@ -272,42 +290,41 @@ void loop() {
       long m = millis();
       if ((m - previousMillisEpoch) > 1000) {
         cursor_move(10,1) ;
-        Serial.print("Seconds passed since midnight: ");
-        Serial.println(daysecs);   // seconds passed since midnight
+        //Serial.print("Seconds passed since midnight: ");
+        //Serial.println(daysecs);   // seconds passed since midnight
         if (DSTState == true) {
           cursor_move(12,4);
-          Serial.print("Daylight Savings Time: "); 
+          //Serial.print("Daylight Savings Time: "); 
         } 
         else {
           cursor_move(12,9);
-          Serial.print("Standard Time: ");
+          //Serial.print("Standard Time: ");
         }
         if (timeZoneAdjust == -28800) {
-          Serial.println("Vancouver");
+          //Serial.println("Vancouver");
         } 
         else 
           if (timeZoneAdjust == -14400) {
-          Serial.println("Halifax");
+          //Serial.println("Halifax");
         } 
         else 
           if (timeZoneAdjust == 0) {
-          Serial.println("London");
+          //Serial.println("London");
         } 
         else 
           if (timeZoneAdjust == 14400) {
-          Serial.println("Moscow");
+          //Serial.println("Moscow");
         } 
         else {
-          Serial.println("Beijing");
+          //Serial.println("Beijing");
         } 
         cursor_move(20,4);
-        Serial.print("Epoch time at reset: ");
-        Serial.print(epoch);
+        //Serial.print("Epoch time at reset: ");
+        //Serial.print(epoch);
         ntpState = 3; 
       }
       break;
     }
   }
 }
-
 
