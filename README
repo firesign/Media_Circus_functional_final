@@ -1,4 +1,4 @@
- Media Circus functional v10
+ Media Circus v3
  by Michael LeBlanc, NSCAD University 2013
  http://generaleccentric.net
  with assistance from PaulS [http://arduino.cc/forum/index.php?action=profile;u=16084] 
@@ -10,4 +10,4 @@
  https://github.com/gauravmm/HT1632-for-Arduino/tree/master/Arduino/HT1632
  
  Notes on this version:  **********************************
- changed server to Raspberry Pi, (port 80) 
+ changed location of the headlines file to "dailytweets.txt" on ahclem.dyndns.info.
